@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INDSENEWS</title>
+  <link rel="manifest" href="/manifest.json">
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f4f6f9; color: #333; }
+    .container { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    button { padding: 12px 24px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; font-weight: bold; transition: background 0.2s; }
+    button:hover { background: #0056b3; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>INDSENEWS</h1>
+    <p>Recevez toutes nos actualités et flashs infos en direct sur votre appareil.</p>
+    <button id="subscribe-btn">Activer les Notifications</button>
+  </div>
+
+  <script>
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
+    }
+
+    async function initPWA() {
+      const subscribeBtn = document.getElementById('subscribe-btn');
+
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        try {
+          const register = await navigator.serviceWorker.register('/sw.js');
+
+          subscribeBtn.addEventListener('click', async () => {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+              alert('Permission refusée.');
+              return;
+            }
+
+            // Récupération de la clé publique VAPID depuis le serveur
+            const res = await fetch('/api/vapid-public-key');
+            const { publicKey } = await res.json();
+
+            const subscription = await register.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(publicKey)
+            });
+
+            // Sauvegarde de l'abonnement
+            await fetch('/api/subscribe', {
+              method: 'POST',
+              body: JSON.stringify(subscription),
+              headers: { 'Content-Type': 'application/json' }
+            });
+
+            subscribeBtn.disabled = true;
+            subscribeBtn.innerText = 'Notifications Activées';
+          });
+        } catch (error) {
+          console.error("Erreur d'initialisation de la PWA :", error);
+        }
+      } else {
+        subscribeBtn.innerText = "Non supporté par ce navigateur";
+        subscribeBtn.disabled = true;
+      }
+    }
+
+    initPWA();
+  </script>
+</body>
+</html>
