@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INDSENEWS - Administration</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #1e293b; color: #f8fafc; padding: 50px 20px; display: flex; justify-content: center; }
+    .admin-card { background: #0f172a; padding: 30px; border-radius: 8px; width: 100%; max-width: 500px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
+    h1 { margin-top: 0; color: #38bdf8; text-align: center; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+    input, textarea { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #334155; background: #1e293b; color: white; box-sizing: border-box; }
+    textarea { resize: vertical; height: 100px; }
+    button { width: 100%; padding: 12px; background: #0284c7; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #0369a1; }
+    #status { margin-top: 15px; text-align: center; font-weight: bold; }
+    .success { color: #4ade80; }
+    .error { color: #f87171; }
+  </style>
+</head>
+<body>
+
+  <div class="admin-card">
+    <h1>INDSENEWS Direct</h1>
+    <p style="text-align: center; color: #94a3b8; font-size: 14px;">Envoyer une notification push à tous les abonnés</p>
+    
+    <form id="broadcast-form">
+      <div class="form-group">
+        <label for="password">Code Secret Admin</label>
+        <input type="password" id="password" required placeholder="Entrez le code secret défini sur Vercel">
+      </div>
+
+      <hr style="border-color: #334155; margin: 20px 0;">
+
+      <div class="form-group">
+        <label for="title">Titre du Flash</label>
+        <input type="text" id="title" placeholder="Ex: ALERTE - Info de dernière minute" required>
+      </div>
+
+      <div class="form-group">
+        <label for="body">Message</label>
+        <textarea id="body" placeholder="Ex: Un nouvel article concernant..." required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="url">Lien de l'article (Optionnel)</label>
+        <input type="url" id="url" placeholder="Ex: /news/article-1">
+      </div>
+
+      <button type="submit">Diffuser en Direct 🚀</button>
+    </form>
+
+    <div id="status"></div>
+  </div>
+
+  <script>
+    document.getElementById('broadcast-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const statusDiv = document.getElementById('status');
+      statusDiv.className = '';
+      statusDiv.innerText = 'Envoi en cours...';
+
+      const password = document.getElementById('password').value;
+      const title = document.getElementById('title').value;
+      const body = document.getElementById('body').value;
+      const url = document.getElementById('url').value;
+
+      try {
+        const response = await fetch('/api/broadcast', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ password, title, body, url })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          statusDiv.className = 'success';
+          statusDiv.innerText = result.message || 'Notification envoyée avec succès !';
+          // Réinitialiser le message et le titre, mais garder le mot de passe pour le prochain envoi
+          document.getElementById('title').value = '';
+          document.getElementById('body').value = '';
+          document.getElementById('url').value = '';
+        } else {
+          statusDiv.className = 'error';
+          statusDiv.innerText = result.error || 'Une erreur est survenue.';
+        }
+      } catch (err) {
+        statusDiv.className = 'error';
+        statusDiv.innerText = 'Erreur réseau de communication avec le serveur.';
+      }
+    });
+  </script>
+</body>
+</html>
