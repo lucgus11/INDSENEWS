@@ -1,0 +1,10 @@
+{
+  "name": "indsenews-pwa",
+  "version": "1.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "@vercel/kv": "^1.0.1",
+    "express": "^4.19.2",
+    "web-push": "^3.6.7"
+  }
+}
