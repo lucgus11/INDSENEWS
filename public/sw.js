@@ -1,26 +1,32 @@
 self.addEventListener('push', event => {
-  let data = { title: 'INDSENEWS', body: 'Nouvelle alerte info !', url: '/' };
-  
+  // Options par défaut si le texte ne peut pas être lu
+  let title = 'INDSENEWS Flash';
+  let body = 'Une nouvelle information vient de tomber !';
+  let url = '/';
+
   if (event.data) {
     try {
-      data = event.data.json();
+      // On tente de lire le JSON
+      const data = event.data.json();
+      title = data.title || title;
+      body = data.body || body;
+      url = data.url || url;
     } catch (e) {
-      data.body = event.data.text();
+      // Si ce n'est pas du JSON, on prend le texte brut reçu
+      body = event.data.text();
     }
   }
 
   const options = {
-    body: data.body,
+    body: body,
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
-    vibrate: [200, 100, 200],
-    data: {
-      url: data.url || '/'
-    }
+    vibrate: [100, 50, 100],
+    data: { url: url }
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification(title, options)
   );
 });
 
